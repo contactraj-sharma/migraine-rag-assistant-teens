@@ -1,0 +1,27 @@
+[
+  {
+    "id": 1,
+    "title": "Migraine Basics",
+    "content": "Migraines are a neurological disorder characterized by recurrent headaches that can be severe and disabling. Common triggers include stress, changes in sleep patterns, hormonal shifts, certain foods, and sensory stimuli. Keeping a headache diary can help identify patterns and triggers."
+  },
+  {
+    "id": 2,
+    "title": "Preventive Strategies",
+    "content": "Lifestyle strategies that may reduce migraine frequency include maintaining regular sleep schedules, staying hydrated, eating balanced meals at consistent times, and engaging in routine aerobic exercise. Relaxation techniques such as mindfulness, yoga, and biofeedback can also help manage stress-related triggers."
+  },
+  {
+    "id": 3,
+    "title": "Acute Treatment Options",
+    "content": "For acute migraine attacks, over-the-counter medications like NSAIDs can be helpful when taken early. Triptans are prescription medications designed specifically for migraines and can provide relief for moderate to severe attacks. Patients should consult their healthcare provider to determine the most appropriate medication and dosage."
+  },
+  {
+    "id": 4,
+    "title": "When to Seek Emergency Care",
+    "content": "Immediate medical attention is necessary if a headache is accompanied by neurological symptoms such as weakness, difficulty speaking, confusion, high fever, stiff neck, or after a head injury. New or dramatically different headaches should be evaluated promptly by a healthcare professional."
+  },
+  {
+    "id": 5,
+    "title": "Managing Migraines in Teens",
+    "content": "Teenagers with migraines should maintain consistent routines around sleep, meals, and physical activity. School accommodations, such as extended time for assignments or access to a quiet room, can help manage migraine days. Encouraging teens to communicate with caregivers and healthcare providers ensures their treatment plan remains effective."
+  }
+]
