@@ -11,7 +11,13 @@ SECRET_KEY = os.getenv("JWT_SECRET", "change-this-secret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# ``passlib``'s default ``bcrypt`` backend recently started raising a
+# ``ValueError`` during capability detection when used with newer releases of
+# the optional ``bcrypt`` dependency. This prevents the application from
+# hashing passwords and results in a 500 error during registration. Switching
+# to ``pbkdf2_sha256`` keeps strong password hashing without depending on the
+# problematic backend.
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
