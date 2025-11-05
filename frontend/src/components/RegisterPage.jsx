@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
-export const REGISTRATION_SUCCESS_MESSAGE = 'Account created! Redirecting you to the chat…'
+export const REGISTRATION_SUCCESS_MESSAGE =
+  'Account created! Redirecting you to sign in…'
 
 export const submitRegistration = async ({
   registerFn,
@@ -22,7 +23,7 @@ export const submitRegistration = async ({
   try {
     await registerFn(email, password, fullName)
     setSuccess(REGISTRATION_SUCCESS_MESSAGE)
-    return scheduleRedirect(() => navigate('/'), redirectDelayMs)
+    return scheduleRedirect(() => navigate('/login'), redirectDelayMs)
   } catch (error) {
     const message = error?.message || 'Registration failed'
     setError(message)
