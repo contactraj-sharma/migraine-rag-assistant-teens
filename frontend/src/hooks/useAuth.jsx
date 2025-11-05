@@ -82,8 +82,21 @@ export const AuthProvider = ({ children }) => {
       body: JSON.stringify({ email, password, full_name: fullName }),
     })
     if (!res.ok) {
-      const detail = await res.json()
-      throw new Error(detail?.detail ?? 'Registration failed')
+      let errorMessage = 'Registration failed'
+      try {
+        const raw = await res.text()
+        if (raw) {
+          try {
+            const detail = JSON.parse(raw)
+            errorMessage = detail?.detail ?? errorMessage
+          } catch {
+            errorMessage = raw
+          }
+        }
+      } catch {
+        // Ignore parsing errors and fall back to the default message
+      }
+      throw new Error(errorMessage)
     }
     const data = await res.json()
     if (typeof window !== 'undefined') {
