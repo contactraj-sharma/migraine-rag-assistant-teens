@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
-const AuthContext = createContext({
+export const AuthContext = createContext({
   user: null,
   token: null,
   loading: true,
