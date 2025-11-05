@@ -31,7 +31,7 @@ export const submitRegistration = async ({
   }
 }
 
-const RegisterPage = () => {
+export function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
