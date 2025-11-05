@@ -1,6 +1,36 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+
+export const REGISTRATION_SUCCESS_MESSAGE = 'Account created! Redirecting you to the chat…'
+
+export const submitRegistration = async ({
+  registerFn,
+  email,
+  password,
+  fullName,
+  navigate,
+  setError,
+  setSuccess,
+  setLoading,
+  scheduleRedirect = (callback, delay) => setTimeout(callback, delay),
+  redirectDelayMs = 1200,
+}) => {
+  setError('')
+  setSuccess('')
+  setLoading(true)
+  try {
+    await registerFn(email, password, fullName)
+    setSuccess(REGISTRATION_SUCCESS_MESSAGE)
+    return scheduleRedirect(() => navigate('/'), redirectDelayMs)
+  } catch (error) {
+    const message = error?.message || 'Registration failed'
+    setError(message)
+    return null
+  } finally {
+    setLoading(false)
+  }
+}
 
 const RegisterPage = () => {
   const { register } = useAuth()
@@ -9,21 +39,41 @@ const RegisterPage = () => {
   const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
+  const redirectTimer = useRef(null)
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      await register(email, password, fullName)
-      navigate('/')
-    } catch (err) {
-      setError(err.message || 'Registration failed')
-    } finally {
-      setLoading(false)
+    const timerId = await submitRegistration({
+      registerFn: register,
+      email,
+      password,
+      fullName,
+      navigate,
+      setError,
+      setSuccess,
+      setLoading,
+      scheduleRedirect: (callback, delay) => {
+        if (redirectTimer.current) {
+          clearTimeout(redirectTimer.current)
+        }
+        redirectTimer.current = setTimeout(callback, delay)
+        return redirectTimer.current
+      },
+    })
+    if (!timerId) {
+      redirectTimer.current = null
     }
   }
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) {
+        clearTimeout(redirectTimer.current)
+      }
+    }
+  }, [])
 
   return (
     <div className="auth-page">
@@ -42,7 +92,14 @@ const RegisterPage = () => {
           Password
           <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
         </label>
-        {error && <p className="error">{error}</p>}
+        <p className="success" role="status" aria-live="polite">
+          {success}
+        </p>
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
         <button type="submit" disabled={loading}>
           {loading ? 'Creating account…' : 'Create account'}
         </button>
