@@ -4,7 +4,8 @@ import React from 'react'
 import ReactDOMServer from 'react-dom/server'
 import { MemoryRouter } from 'react-router-dom'
 
-import RegisterPage, { REGISTRATION_SUCCESS_MESSAGE, submitRegistration } from '../RegisterPage.jsx'
+import RegisterPage, { submitRegistration } from '../RegisterPage.jsx'
+import { REGISTRATION_SUCCESS_MESSAGE } from '../../constants/register.js'
 import { AuthContext } from '../../hooks/useAuth.jsx'
 
 const render = () =>

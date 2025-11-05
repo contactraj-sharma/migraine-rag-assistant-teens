@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-
-export const REGISTRATION_SUCCESS_MESSAGE =
-  'Account created! Redirecting you to sign in…'
+import { REGISTRATION_SUCCESS_MESSAGE } from '../constants/register.js'
 
 export const submitRegistration = async ({
   registerFn,
