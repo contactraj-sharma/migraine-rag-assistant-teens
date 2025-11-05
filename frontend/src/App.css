@@ -230,6 +230,11 @@ textarea:focus {
   margin: 0;
 }
 
+.success {
+  color: #15803d;
+  margin: 0;
+}
+
 .error {
   color: #dc2626;
   margin: 0;
