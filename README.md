@@ -24,7 +24,7 @@ This project provides a full-stack reference implementation of a migraine-focuse
 # from the repository root
 ./scripts/setup_venv.sh
 source .venv/bin/activate  # On Windows use `.venv\\Scripts\\activate`
-uvicorn backend.app.main:app --reload
+python -m backend.app.server
 ```
 
 Environment variables:
@@ -48,4 +48,4 @@ The React SPA includes registration, login, and a chat page inspired by modern A
 
 - The RAG pipeline uses TF–IDF similarity (via scikit-learn) over the bundled migraine knowledge base. For production, replace this with a vector database and clinically validated content.
 - The backend persists users and chat transcripts in a SQLite database (`backend/app.db`). Remove `app.db` to reset the environment.
-- When running locally, start the backend on port 8000 and the frontend on port 5173. The Vite dev server proxies `/auth` and `/chat` requests to the FastAPI service.
+- When running locally, the backend development helper will automatically pick port 8000 (or the next free port if 8000 is occupied) and the frontend runs on port 5173. Override the backend target for the Vite dev server by setting `VITE_BACKEND_URL` if you need to point to a different address.
