@@ -77,7 +77,10 @@ describe('submitRegistration', () => {
     assert.deepStrictEqual(setLoading.mock.calls.map((call) => call.arguments[0]), [true, false])
     assert.strictEqual(scheduleRedirect.mock.calls.length, 1)
     assert.strictEqual(navigate.mock.calls.length, 1)
-    assert.deepStrictEqual(navigate.mock.calls[0].arguments, ['/login'])
+    assert.deepStrictEqual(navigate.mock.calls[0].arguments, [
+      '/login',
+      { state: { successMessage: REGISTRATION_SUCCESS_MESSAGE } },
+    ])
   })
 
   it('surfaces the error message and skips redirect when registration fails', async () => {

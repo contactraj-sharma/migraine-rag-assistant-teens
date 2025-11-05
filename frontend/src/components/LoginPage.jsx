@@ -1,19 +1,29 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 const LoginPage = () => {
   const { login } = useAuth()
+  const location = useLocation()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(() => location.state?.successMessage ?? '')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (location.state?.successMessage) {
+      setSuccess(location.state.successMessage)
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [location, navigate])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     setLoading(true)
     setError('')
+    setSuccess('')
     try {
       await login(email, password)
       navigate('/')
@@ -37,6 +47,9 @@ const LoginPage = () => {
           Password
           <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
         </label>
+        <p className="success" role="status" aria-live="polite">
+          {success}
+        </p>
         {error && <p className="error">{error}</p>}
         <button type="submit" disabled={loading}>
           {loading ? 'Signing in…' : 'Sign in'}

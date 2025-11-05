@@ -21,7 +21,10 @@ export const submitRegistration = async ({
   try {
     await registerFn(email, password, fullName)
     setSuccess(REGISTRATION_SUCCESS_MESSAGE)
-    return scheduleRedirect(() => navigate('/login'), redirectDelayMs)
+    return scheduleRedirect(
+      () => navigate('/login', { state: { successMessage: REGISTRATION_SUCCESS_MESSAGE } }),
+      redirectDelayMs
+    )
   } catch (error) {
     const message = error?.message || 'Registration failed'
     setError(message)
