@@ -21,11 +21,10 @@ This project provides a full-stack reference implementation of a migraine-focuse
 ### Setup
 
 ```bash
-cd backend
-python -m venv .venv
+# from the repository root
+./scripts/setup_venv.sh
 source .venv/bin/activate  # On Windows use `.venv\\Scripts\\activate`
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn backend.app.main:app --reload
 ```
 
 Environment variables:
