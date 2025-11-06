@@ -92,8 +92,9 @@ def _login_user(email: str = "teen@example.com", password: str = "StrongPass123"
 
 
 def test_full_auth_chat_flow(app_dependencies):
-    register_token = _register_user()
-    assert register_token.access_token
+    registered_user = _register_user()
+    assert registered_user.email == "teen@example.com"
+    assert registered_user.full_name == "Test Teen"
 
     login_token = _login_user()
     assert login_token.access_token
@@ -115,8 +116,8 @@ def test_full_auth_chat_flow(app_dependencies):
 
 
 def test_duplicate_registration_rejected(app_dependencies):
-    first_token = _register_user()
-    assert first_token.access_token
+    first_user = _register_user()
+    assert first_user.email == "teen@example.com"
 
     with pytest.raises(HTTPException) as exc_info:
         _register_user()

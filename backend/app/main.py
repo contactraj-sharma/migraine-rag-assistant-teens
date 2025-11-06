@@ -35,7 +35,7 @@ def on_startup() -> None:
     get_knowledge_base()
 
 
-@app.post("/auth/register", response_model=Token, status_code=status.HTTP_201_CREATED)
+@app.post("/auth/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def register_user(payload: UserCreate):
     with get_session() as session:
         existing = session.exec(select(User).where(User.email == payload.email)).first()
@@ -49,8 +49,12 @@ def register_user(payload: UserCreate):
         session.add(user)
         session.commit()
         session.refresh(user)
-        token = auth.create_access_token(str(user.id))
-        return Token(access_token=token)
+        return UserRead(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            created_at=user.created_at,
+        )
 
 
 @app.post("/auth/login", response_model=Token)
