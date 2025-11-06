@@ -99,11 +99,6 @@ export const AuthProvider = ({ children }) => {
       throw new Error(errorMessage)
     }
     const data = await res.json()
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('token', data.access_token)
-    }
-    setToken(data.access_token)
-    setLoading(true)
     return data
   }, [])
 
