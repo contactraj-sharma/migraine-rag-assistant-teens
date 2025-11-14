@@ -1,7 +1,7 @@
 # Migraine RAG Assistant for Teens – Comprehensive Project Report
 
 ## Page 01 – Cover and Attribution
-The Migraine RAG Assistant for Teens is a retrieval-augmented generation platform built to deliver compassionate, evidence-based migraine education tailored to teenagers. This comprehensive report documents the motivations, architecture, implementation, testing, and future directions for the project. It consolidates information gathered from the backend FastAPI service, the React-based frontend, supporting datasets, and infrastructure tooling. The report spans fifty sections intended to approximate fifty pages when rendered with standard technical-report spacing and formatting. Each section includes detailed prose, tables, and narratives suitable for onboarding engineers, product strategists, clinical advisors, or stakeholders evaluating the assistant’s readiness for wider adoption.
+The Migraine RAG Assistant for Teens is a retrieval-augmented generation platform built to deliver compassionate, evidence-based migraine education tailored to teenagers. This comprehensive report documents the motivations, architecture, implementation, testing, and future directions for the project. It consolidates information gathered from the backend FastAPI service, the React-based frontend, supporting datasets, and infrastructure tooling. The report spans fifty-five sections intended to approximate fifty-five pages when rendered with standard technical-report spacing and formatting. Each section includes detailed prose, tables, and narratives suitable for onboarding engineers, product strategists, clinical advisors, or stakeholders evaluating the assistant’s readiness for wider adoption.
 
 Project stewardship resides with the cross-disciplinary team that authored the repository. Contributions include software engineering, user experience design, content curation, and compliance research. Source code lives in the `migraine-rag-assistant-teens` repository, organized into backend, frontend, documentation, and script directories. The project adheres to open-source best practices by including automated tests, descriptive README files, and modular code organization, enabling future contributors to extend the assistant responsibly. Readers are encouraged to consult this report alongside the repository to explore the full context behind technical decisions.
 
@@ -158,89 +158,150 @@ The project should also track article versions and metadata such as publication 
 ## Page 32 – Observability and Logging
 Current logging relies on FastAPI’s default Uvicorn logs and console outputs within the frontend. As usage grows, centralized observability becomes important. Backend instrumentation can log request durations, retrieval scores, and LLM latency to a structured logging system. Error monitoring services like Sentry or OpenTelemetry traces can provide deep visibility into failures.
 
+
+## Page 33 – UX Design Screens Overview
+The product team produced a coherent set of design screens to keep the teen-centric experience consistent across the web application. Three primary screens anchor the journey:
+
+1. **Welcome and Authentication Screen** – A gradient background with soft-light overlays invites teens to register or log in. The layout mirrors the existing `LoginPage.jsx` and `RegisterPage.jsx` components, highlighting input fields with large labels, contextual helper text, and supportive copy reminding users that guidance complements—not replaces—medical care. Call-to-action buttons sit above the fold on both desktop and mobile breakpoints, and a secondary link educates caregivers about privacy commitments.
+2. **Onboarding Tips Modal** – After first login, an overlay introduces the assistant’s capabilities, summarizing how context cards, empathetic language, and safety reminders function. A three-step carousel (“Ask”, “Review Sources”, “Save Insights”) ensures quick orientation while aligning with the glassmorphism style in `App.css`. Accessibility considerations include focus traps, keyboard navigation, and `aria-live` regions for screen readers.
+3. **Chat and Evidence Workspace** – The central chat pane uses alternating message bubbles, while a collapsible right rail shows retrieved snippets with source metadata. Sticky action buttons allow users to mark responses as helpful or request clearer wording, supporting iterative UX research. Responsive guidelines call for the context rail to collapse on devices narrower than 960px, surfacing a floating button to reopen evidence cards.
+
+These annotated screens live in the shared Figma workspace referenced by the design team and are exported as PDFs for stakeholders. Their detailed documentation enables engineers to reconcile component-level implementations with UX intent during sprint reviews.
+
+## Page 34 – High-Level Architecture Diagram
+The high-level design emphasizes modular services interacting through well-defined interfaces. The following textual diagram captures the relationships:
+
+```
+┌────────────────┐      HTTPS       ┌────────────────┐       SQLModel ORM       ┌─────────────────────┐
+│ React Frontend │ ───────────────► │  FastAPI API   │ ───────────────────────► │   SQLite Database   │
+│ (Vite Build)   │ ◄─────────────── │  (backend/app) │ ◄─────────────────────── │ (backend/app/models)│
+└────────────────┘  JWT Bearer Auth └────────────────┘    CRUD + Token Storage  └─────────────────────┘
+        │                                     │
+        │ REST Calls                          │ Retrieval + Generation
+        ▼                                     ▼
+┌────────────────┐      Vectorizable Text      ┌────────────────┐
+│   Browser UI   │ ──────────────────────────► │ Knowledge Base │
+│ (Auth + Chat)  │ ◄────────────────────────── │ TF-IDF + LLM   │
+└────────────────┘    Contextual Responses     └────────────────┘
+```
+
+Key flows include authentication (JWT issuance via `auth.py`), chat orchestration (FastAPI routes invoking `rag.py` and `llm.py`), and persistence (SQLModel writing to SQLite). Static assets deploy via CDN or container registry, while environment variables configure API keys and secrets. This diagram helps stakeholders grasp system boundaries and integration points at a glance.
+
+## Page 35 – Low-Level Design Diagrams
+Detailed component interactions ensure developers understand the handoffs between modules:
+
+- **Sequence Diagram – Chat Query**: `ChatPage` dispatches `POST /chat/query` with the latest prompt and token. FastAPI dependency injection authenticates the user, then `rag.KnowledgeBase.retrieve` computes TF-IDF similarities. Retrieved passages and user input pass to `LLMClient.generate`, which either forwards to OpenAI or invokes the deterministic fallback. The response persists via `ChatMessageRepository.create` before returning JSON to the client, which appends the assistant message and context cards.
+- **Component Diagram – Authentication**: `useAuth` hook encapsulates API calls (`login`, `register`, `me`, `logout`) and emits context to `RequireAuth`. Backend components include `auth.verify_password`, `auth.create_access_token`, and `auth.decode_access_token`, each leveraging shared utilities in `backend/app/security.py` (if extended). SQLite tables `user` and `chatmessage` maintain relational integrity with foreign keys for ownership.
+- **State Diagram – Conversation History**: The client maintains `idle → submitting → awaitingResponse → displayingResult` transitions. Errors transition to `displayingError`, triggering helper text and optional retry. Persisted history allows the user to rehydrate sessions upon reload, shifting state back to `displayingResult` with cached arrays.
+
+These diagrams are documented in the `/docs/design` directory (to be expanded) and should be refreshed whenever API contracts or state machines change, enabling accurate onboarding artifacts for engineers.
+
+## Page 36 – Comprehensive Testing Approach
+The testing approach layers automated and manual validations to safeguard quality:
+
+| Test Layer | Scope | Tooling | Cadence | Exit Criteria |
+|------------|-------|---------|---------|----------------|
+| Unit Tests | Pure functions in `rag.py`, `auth.py`, and React hooks | `pytest`, `vitest` | Per commit via CI | ≥90% branch coverage, deterministic outputs |
+| Integration Tests | End-to-end API flows (register/login/chat/history) | `pytest` with TestClient | Per merge to `main` | All HTTP status codes correct, database rolled back |
+| Contract Tests | Validate JSON schemas between frontend and backend | `schemathesis`, `pydantic` models | Weekly | No backward-incompatible changes without version bump |
+| UI Tests | Form submissions, accessibility checks | Playwright, axe-core | Nightly | WCAG 2.1 AA issues triaged and addressed |
+| Manual Exploratory | Teen advisory board feedback sessions | Guided scripts + observation | Quarterly | All high-priority UX regressions resolved |
+
+Regression gates run automatically in CI/CD pipelines, while manual cycles focus on empathetic tone verification and accessibility compliance. Test data fixtures avoid real personal information, and sensitive logs are scrubbed before analytics review.
+
+## Page 37 – Deployment and Stakeholder Communication Plan
+Deployment to stakeholders follows a staged rollout to balance reliability with rapid feedback:
+
+1. **Development Environment** – Engineers deploy backend and frontend containers locally using Docker Compose. Feature branches auto-deploy to ephemeral preview URLs for design validation.
+2. **Staging Environment** – Hosted on a managed platform (e.g., Azure App Service for FastAPI, Azure Static Web Apps for React). Continuous integration pipelines build, test, and promote artifacts. Staging integrates anonymized sample data and telemetry dashboards for observability dry runs.
+3. **Stakeholder Review Environment** – Monthly, staging snapshots are promoted to a password-protected review space. Clinical advisors, teen focus groups, and product managers receive release notes summarizing new features, resolved defects, and outstanding risks. Feedback is captured in the product backlog using labels (`design-review`, `clinical-review`).
+4. **Production Pilot** – Once sign-off is obtained, the production environment rolls forward with blue/green deployment to minimize downtime. Rollback scripts are rehearsed quarterly, and feature flags toggle experimental experiences for limited cohorts.
+
+Communication rituals complement the technical rollout. A stakeholder newsletter summarizes metrics (engagement, latency, test pass rates), while fortnightly demos highlight UX changes aligned with the Figma screens described earlier. Incident response playbooks define roles for engineering, clinical advisors, and communications teams to ensure teen users receive timely updates during disruptions.
+
 Frontend logging should avoid exposing personal data, instead tracking anonymized metrics such as feature engagement or error frequency. Adding feature flags and monitoring their impact enables gradual rollouts of experimental features. Documenting observability needs in this report supports early planning for monitoring budgets and staffing.
 
-## Page 33 – Performance Considerations
+## Page 38 – Performance Considerations
 Performance goals focus on low-latency responses and efficient resource usage. TF-IDF queries execute quickly for small datasets, but scaling to hundreds of documents may require caching or precomputing embeddings. SQLite handles modest write volumes; however, high-concurrency scenarios might necessitate migration to PostgreSQL with connection pooling. Frontend performance benefits from Vite’s code splitting and optimized bundling.
 
 Optimization opportunities include memoizing the knowledge base object (already achieved via `functools.lru_cache`) and reusing database engines to reduce connection overhead. Implementing pagination in chat history prevents large payloads, while lazy loading context panels conserves bandwidth. Profiling tools—such as FastAPI’s middleware or browser DevTools—should inform performance tuning before production launches.
 
-## Page 34 – Scalability Roadmap
+## Page 39 – Scalability Roadmap
 Scaling the assistant involves both technical and organizational steps. Technically, replacing TF-IDF with vector databases (e.g., FAISS, Pinecone) enables semantic search across larger corpora. Deploying the backend on container orchestration platforms (Kubernetes, ECS) allows horizontal scaling based on traffic. Introducing background workers for heavy tasks—like summarizing long transcripts—keeps the API responsive.
 
 Organizationally, scaling requires support processes: incident response rotations, documentation standards, and onboarding guides. This report serves as a foundational artifact to teach new team members about the system’s architecture and dependencies. As teen adoption grows, partnerships with clinics, schools, and advocacy groups will inform scaling priorities and ensure the assistant remains aligned with community needs.
 
-## Page 35 – Risk Assessment
+## Page 40 – Risk Assessment
 Key risks include misinformation, unauthorized access, data breaches, and reliance on third-party LLMs. Mitigation strategies involve strict content vetting, comprehensive security audits, encryption, and clear disclaimers about medical limitations. Rate limiting and anomaly detection can mitigate abuse, while regular dependency updates reduce vulnerability exposure. Vendor risk assessments should evaluate OpenAI or alternate LLM providers for compliance with teen data protection standards.
 
 Another risk is user overreliance on automated advice. The system counteracts this by emphasizing professional consultation and providing references to context snippets. Involving healthcare advisors in governance ensures responses remain aligned with clinical best practices. This report catalogs risks to keep them visible during roadmap planning and stakeholder reviews.
 
-## Page 36 – Ethical Framework
+## Page 41 – Ethical Framework
 Ethical considerations span fairness, accountability, transparency, and teen autonomy. The assistant must avoid biased or stigmatizing language, support diverse cultural contexts, and respect gender identity and family structures. Transparent sourcing—returning article titles and content—helps users evaluate responses critically. Accountability mechanisms might include audit trails, manual review processes, and contact channels for reporting issues.
 
 Teen autonomy entails offering actionable information without coercion. The assistant should encourage conversations with trusted adults and healthcare professionals, not replace them. This report recommends establishing an ethics review board to oversee updates, ensuring that technology aligns with adolescent well-being principles and medical ethics.
 
-## Page 37 – Compliance Landscape
+## Page 42 – Compliance Landscape
 Operating in healthcare-adjacent domains requires awareness of regulations like HIPAA (US), GDPR (EU), and COPPA (US). While the assistant avoids storing clinical records, any expansion into personalized treatment advice or integration with medical providers may trigger stricter compliance obligations. Policies must define data retention, breach notification procedures, and user consent workflows.
 
 International deployments necessitate localization and adherence to regional privacy laws. Documenting compliance requirements early enables architecture decisions—like data residency or encryption—that prevent costly rework. This report outlines current practices and highlights the need for legal consultation before scaling beyond educational use cases.
 
-## Page 38 – Community and Partnership Strategy
+## Page 43 – Community and Partnership Strategy
 Engaging teens, parents, schools, and healthcare professionals fosters trust and drives adoption. Potential partnerships include migraine advocacy organizations, pediatric neurology clinics, and school health programs. Community feedback loops—surveys, focus groups, beta programs—inform feature priorities and content updates. Offering educational materials for caregivers can position the assistant as part of a holistic migraine management toolkit.
 
 Open-source contributions invite technologists to improve accessibility, localization, or retrieval accuracy. Establishing community guidelines and code of conduct documents ensures inclusive collaboration. This report serves as a central reference for outreach efforts, articulating the assistant’s mission and technical capabilities to potential partners.
 
-## Page 39 – User Research and Testing Plans
+## Page 44 – User Research and Testing Plans
 User research should blend qualitative interviews with usability tests. Teens can participate in moderated sessions to evaluate chat clarity, tone, and navigation, while caregivers assess trustworthiness and safety messaging. Surveys can measure perceived usefulness and emotional support. A/B testing different prompts or UI elements may uncover preferences across age ranges or migraine severity levels.
 
 Future roadmap items include diary features for trigger tracking or integration with wearable data. Research protocols must obtain appropriate consent, especially when involving minors. Documenting these plans in this report ensures the team allocates time and resources to user-centered design, preventing feature decisions from drifting away from actual teen needs.
 
-## Page 40 – Content Expansion Roadmap
+## Page 45 – Content Expansion Roadmap
 Expanding the knowledge base enables deeper education. Potential additions cover mental health coping strategies, school accommodations, nutrition guidance, and myth-busting sections. Contributors should prioritize peer-reviewed or clinician-approved sources to maintain credibility. Metadata fields—difficulty level, estimated reading time—can tailor responses to user preferences.
 
 Localization is also key; translating articles into multiple languages broadens reach. Developing tooling to manage translations and ensure consistent updates prevents drift between languages. This report provides a structured outline for content teams to plan releases, collaborate with medical experts, and maintain a feedback loop with users.
 
-## Page 41 – Feature Roadmap (Short Term)
+## Page 46 – Feature Roadmap (Short Term)
 Short-term features emphasize polish and trust. Priorities include displaying chat history within the UI, offering quick action buttons for common questions, integrating feedback widgets, and implementing password reset flows. Enhancing the registration experience with password strength indicators and guardian consent options also sits high on the list. Technical debt tasks—such as caching database engines or adding type hints—improve maintainability.
 
 Another short-term goal is to introduce automated frontend tests and CI pipelines to catch regressions. Documenting these items aligns teams around near-term deliverables, ensuring resources target features with the highest impact on teen experience and safety.
 
-## Page 42 – Feature Roadmap (Long Term)
+## Page 47 – Feature Roadmap (Long Term)
 Long-term ambitions include migrating to semantic search, offering multimodal resources (videos, infographics), and integrating with healthcare provider portals for guided follow-up. Implementing personalization—such as tracking user goals or symptoms—could offer tailored advice, provided privacy safeguards exist. Gamification elements (badges for healthy habits) might improve adherence to migraine management plans.
 
 From an engineering perspective, adopting microservices or serverless components could support global scaling. Data science initiatives may analyze anonymized usage patterns to identify content gaps or emerging teen concerns. The long-term roadmap demands cross-functional collaboration, which this report encourages by articulating a unified vision.
 
-## Page 43 – Team Roles and Collaboration
+## Page 48 – Team Roles and Collaboration
 Delivering the assistant requires coordination among developers, designers, clinicians, and policy experts. Key roles include backend engineers managing APIs and databases, frontend engineers crafting accessible interfaces, UX researchers conducting teen studies, medical advisors validating content, and compliance officers overseeing regulatory adherence. Product managers align priorities with stakeholder needs, while DevOps engineers handle deployment pipelines.
 
 Effective collaboration relies on shared documentation (like this report), regular stand-ups, and retrospectives. Implementing design systems and code review protocols maintains quality across contributions. Mentorship programs can onboard student contributors or teen ambassadors, fostering community ownership of the tool.
 
-## Page 44 – Documentation and Knowledge Sharing
+## Page 49 – Documentation and Knowledge Sharing
 Beyond this report, documentation should cover API references, onboarding checklists, coding standards, and runbooks. README files guide quick starts, while inline docstrings clarify complex logic. Wikis or knowledge bases can capture clinical guidance, user research findings, and regulatory updates. Automating documentation generation—for example, using FastAPI’s automatic OpenAPI schemas—ensures accuracy.
 
 Encouraging documentation contributions during code reviews keeps knowledge current. Hosting lunch-and-learn sessions or creating video walkthroughs helps interdisciplinary stakeholders understand the system. This report acts as the canonical narrative, but it should be complemented by living documents to stay relevant as the assistant evolves.
 
-## Page 45 – Training and Support Materials
+## Page 50 – Training and Support Materials
 Teen users may benefit from tutorials, walkthrough videos, or in-app tooltips explaining how to ask effective questions. Caregivers might need guides on interpreting responses or initiating conversations with healthcare providers based on the assistant’s suggestions. Support teams should prepare FAQs addressing login issues, privacy concerns, and disclaimers about medical limitations.
 
 Internally, onboarding materials for new developers should cover environment setup, coding conventions, and testing procedures. Offering paired programming sessions or buddy systems accelerates ramp-up. This report recommends dedicating time to craft accessible support resources that complement the software experience.
 
-## Page 46 – Metrics and Analytics Strategy
+## Page 51 – Metrics and Analytics Strategy
 Measuring impact involves tracking user engagement, question topics, and sentiment. Analytics dashboards can display metrics like daily active users, average session length, and most-accessed knowledge base entries. Qualitative feedback collected through in-app surveys or support tickets provides context for quantitative trends. Privacy-preserving analytics—aggregated data with opt-in mechanisms—respect teen autonomy while informing improvements.
 
 Metrics should align with project goals: increases in knowledge retention, reductions in reported migraine frequency (if self-tracked), or higher satisfaction with healthcare visits after using the assistant. Establishing baseline metrics before major feature launches enables causal analysis. Documenting metrics strategy here ensures stakeholders agree on success criteria and data governance practices.
 
-## Page 47 – Sustainability and Maintenance
+## Page 52 – Sustainability and Maintenance
 Long-term sustainability involves funding, staffing, and community support. Budget planning should cover hosting costs, API usage fees, content licensing, and staff salaries. Open-source contributions can offset development workload, but governance must ensure quality. Establishing maintenance rotations prevents burnout and distributes institutional knowledge.
 
 Technology sustainability also matters: keeping dependencies updated, refactoring legacy code, and monitoring performance. Regular audits of security, accessibility, and privacy safeguards maintain trust. This report underscores the importance of proactive maintenance to keep the assistant reliable for teens facing chronic health challenges.
 
-## Page 48 – Appendices Overview
+## Page 53 – Appendices Overview
 Appendices can include API endpoint summaries, database schema diagrams, user personas, and testing matrices. For example, an endpoint appendix might detail request/response payloads, authentication requirements, and sample curl commands. A schema appendix could visualize relationships between `User` and `ChatMessage`, while persona documents capture scenarios like “High school athlete managing migraines” or “Teen balancing academics and sleep hygiene.”
 
 While appendices are not reproduced in full within this report, teams should maintain them in supplemental documents stored in the `docs/` directory. Keeping appendices modular facilitates updates without altering the core report, ensuring accuracy over time.
 
-## Page 49 – Glossary of Key Terms
+## Page 54 – Glossary of Key Terms
 - **Retrieval-Augmented Generation (RAG):** A technique that combines document retrieval with language generation to ground answers in factual sources.
 - **TF-IDF (Term Frequency–Inverse Document Frequency):** A statistical measure used to evaluate word importance in a document relative to a corpus, central to the current retrieval system.
 - **SQLModel:** A library merging SQLAlchemy and Pydantic paradigms for Python data models, used for database interactions.
@@ -252,7 +313,7 @@ While appendices are not reproduced in full within this report, teams should mai
 
 Maintaining a glossary aids cross-disciplinary collaboration by ensuring consistent terminology across engineering, clinical, and policy discussions. Teams should expand this glossary as new concepts emerge during development.
 
-## Page 50 – Conclusion and Repository References
+## Page 55 – Conclusion and Repository References
 The Migraine RAG Assistant for Teens combines reliable medical content, thoughtful UX, and configurable AI orchestration to deliver compassionate migraine education. By structuring the backend with FastAPI and SQLModel, the team ensures secure authentication and durable chat records. The React frontend offers an inviting interface with responsive design and accessible semantics. Deterministic fallbacks and curated knowledge keep responses grounded, while modular architecture supports future integration of advanced retrieval and personalization features.
 
-This fifty-section report consolidates the project’s intent, technical details, and strategic outlook. Readers seeking deeper dives should explore the repository’s source files cited throughout this document—particularly `backend/app/main.py`, `backend/app/rag.py`, `backend/app/llm.py`, and `frontend/src/hooks/useAuth.jsx`. Continued collaboration among engineers, clinicians, designers, and teens themselves will evolve the assistant into an indispensable tool for navigating migraine care with confidence and compassion.
+This fifty-five-section report consolidates the project’s intent, technical details, and strategic outlook. Readers seeking deeper dives should explore the repository’s source files cited throughout this document—particularly `backend/app/main.py`, `backend/app/rag.py`, `backend/app/llm.py`, and `frontend/src/hooks/useAuth.jsx`. Continued collaboration among engineers, clinicians, designers, and teens themselves will evolve the assistant into an indispensable tool for navigating migraine care with confidence and compassion.
